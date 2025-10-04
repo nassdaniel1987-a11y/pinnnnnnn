@@ -47,23 +47,23 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
-        padding: '16px',
+        padding: '20px',
       }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(248, 250, 252, 0.95)',
+          background: 'rgba(248, 250, 252, 0.98)',
           backdropFilter: 'blur(12px)',
           border: '1px solid rgba(255, 255, 255, 0.6)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.37)',
           color: '#1f2937',
           borderRadius: '16px',
-          padding: '24px',
-          maxWidth: '800px',
-          width: '100%',
-          maxHeight: '80vh',
+          padding: '28px',
+          width: '90%',
+          maxWidth: '1000px',
+          maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -74,16 +74,18 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '24px',
+          paddingBottom: '16px',
+          borderBottom: '2px solid rgba(0,0,0,0.1)',
         }}>
           <h3 style={{
-            fontSize: '20px',
+            fontSize: '22px',
             fontWeight: 'bold',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             margin: 0,
           }}>
-            <i className="fas fa-calendar-alt" style={{ color: '#3b82f6' }}></i>
+            <i className="fas fa-calendar-alt" style={{ color: '#3b82f6', fontSize: '20px' }}></i>
             <span>Zettel-Planer für '{days[currentDayIndex]}'</span>
           </h3>
           <button
@@ -92,11 +94,11 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
               background: 'rgba(107, 114, 128, 0.1)',
               border: 'none',
               color: '#6b7280',
-              width: '36px',
-              height: '36px',
+              width: '40px',
+              height: '40px',
               borderRadius: '8px',
               cursor: 'pointer',
-              fontSize: '20px',
+              fontSize: '22px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -115,6 +117,33 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
           </button>
         </div>
 
+        {/* Table Header */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 140px 140px 60px',
+          gap: '16px',
+          padding: '12px 16px',
+          background: 'rgba(59, 130, 246, 0.08)',
+          borderRadius: '8px',
+          marginBottom: '12px',
+          fontWeight: 600,
+          fontSize: '13px',
+          color: '#4b5563',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+        }}>
+          <div>Zettel</div>
+          <div style={{ textAlign: 'center' }}>
+            <i className="fas fa-door-open" style={{ marginRight: '6px', color: '#22c55e' }}></i>
+            Öffnet um
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <i className="fas fa-door-closed" style={{ marginRight: '6px', color: '#ef4444' }}></i>
+            Schließt um
+          </div>
+          <div style={{ textAlign: 'center' }}>Sperre</div>
+        </div>
+
         {/* List */}
         <div style={{
           overflowY: 'auto',
@@ -122,9 +151,15 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
           paddingRight: '8px',
         }}>
           {sortedNotes.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#9ca3af', padding: '32px' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              color: '#9ca3af', 
+              padding: '48px 32px',
+              fontSize: '15px',
+            }}>
+              <i className="fas fa-inbox" style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3, display: 'block' }}></i>
               Für diesen Tag gibt es keine Zettel.
-            </p>
+            </div>
           ) : (
             sortedNotes.map((note, index) => {
               const isLocked = note.closedUntil === 'LOCKED';
@@ -135,13 +170,14 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
                 <div
                   key={note.id}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 140px 140px 60px',
                     gap: '16px',
-                    padding: '12px 8px',
-                    borderBottom: index < sortedNotes.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none',
+                    alignItems: 'center',
+                    padding: '14px 16px',
+                    borderBottom: index < sortedNotes.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
                     transition: 'background 0.2s',
+                    borderRadius: '6px',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)';
@@ -151,72 +187,87 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
                   }}
                 >
                   {/* Title */}
-                  <span
+                  <div
                     style={{
-                      flex: 1,
                       fontSize: '14px',
                       fontWeight: 500,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      color: '#1f2937',
                     }}
                     title={stripHtml(note.name)}
                   >
                     {stripHtml(note.name) || 'Unbenannter Zettel'}
-                  </span>
+                  </div>
 
-                  {/* Controls */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    flexShrink: 0,
-                  }}>
-                    {/* Open Time */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <i className="fas fa-door-open" style={{ color: '#22c55e', fontSize: '14px' }} title="Öffnet um"></i>
-                      <input
-                        type="time"
-                        value={openTimeValue}
-                        onChange={(e) => handleOpenTimeChange(note.id, e.target.value)}
-                        style={{
-                          background: '#ffffff',
-                          border: '1px solid #d1d5db',
-                          color: '#1f2937',
-                          borderRadius: '6px',
-                          padding: '4px 8px',
-                          fontSize: '13px',
-                          width: '100px',
-                        }}
-                      />
-                    </div>
+                  {/* Open Time */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <input
+                      type="time"
+                      value={openTimeValue}
+                      onChange={(e) => handleOpenTimeChange(note.id, e.target.value)}
+                      disabled={isLocked}
+                      style={{
+                        width: '110px',
+                        background: isLocked ? '#f3f4f6' : '#ffffff',
+                        border: '1px solid #d1d5db',
+                        color: isLocked ? '#9ca3af' : '#1f2937',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        fontSize: '13px',
+                        cursor: isLocked ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onFocus={(e) => {
+                        if (!isLocked) {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#d1d5db';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
 
-                    {/* Close Time */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <i className="fas fa-door-closed" style={{ color: '#ef4444', fontSize: '14px' }} title="Schließt um"></i>
-                      <input
-                        type="time"
-                        value={closeTimeValue}
-                        onChange={(e) => handleCloseTimeChange(note.id, e.target.value)}
-                        style={{
-                          background: '#ffffff',
-                          border: '1px solid #d1d5db',
-                          color: '#1f2937',
-                          borderRadius: '6px',
-                          padding: '4px 8px',
-                          fontSize: '13px',
-                          width: '100px',
-                        }}
-                      />
-                    </div>
+                  {/* Close Time */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <input
+                      type="time"
+                      value={closeTimeValue}
+                      onChange={(e) => handleCloseTimeChange(note.id, e.target.value)}
+                      style={{
+                        width: '110px',
+                        background: '#ffffff',
+                        border: '1px solid #d1d5db',
+                        color: '#1f2937',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = '#3b82f6';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#d1d5db';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
 
-                    {/* Lock Button */}
+                  {/* Lock Button */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <button
                       onClick={() => handleToggleLock(note)}
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
                         border: 'none',
                         cursor: 'pointer',
                         display: 'flex',
@@ -229,9 +280,11 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
                       title={isLocked ? 'Zettel entsperren' : 'Dauerhaft sperren'}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     >
                       <i className={`fas ${isLocked ? 'fa-lock' : 'fa-lock-open'}`} style={{ fontSize: '14px' }}></i>
@@ -244,15 +297,24 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
         </div>
 
         {/* Footer */}
-        <p style={{
-          fontSize: '12px',
-          color: '#9ca3af',
-          textAlign: 'center',
-          marginTop: '16px',
-          marginBottom: 0,
+        <div style={{
+          marginTop: '20px',
+          paddingTop: '16px',
+          borderTop: '2px solid rgba(0,0,0,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
         }}>
-          Änderungen werden sofort gespeichert.
-        </p>
+          <i className="fas fa-info-circle" style={{ color: '#3b82f6', fontSize: '14px' }}></i>
+          <p style={{
+            fontSize: '13px',
+            color: '#6b7280',
+            margin: 0,
+          }}>
+            Änderungen werden automatisch gespeichert
+          </p>
+        </div>
       </div>
     </div>
   );

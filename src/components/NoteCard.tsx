@@ -24,13 +24,13 @@ export const NoteCard = ({ note }: NoteCardProps) => {
   const isClosed = isPermanentlyLocked || isTimeLocked;
 
   useEffect(() => {
-    if (!cardRef.current || !isEditMode || note.is_position_locked) return;
-
     const element = cardRef.current;
+    if (!element || !isEditMode || note.is_position_locked) return;
+
     let x = 0;
     let y = 0;
 
-    interact(element)
+    const interactable = interact(element)
       .draggable({
         listeners: {
           start: () => {
@@ -80,7 +80,7 @@ export const NoteCard = ({ note }: NoteCardProps) => {
       });
 
     return () => {
-      interact(element).unset();
+      interactable.unset();
     };
   }, [isEditMode, note.is_position_locked, note.id]);
 
@@ -117,9 +117,48 @@ export const NoteCard = ({ note }: NoteCardProps) => {
     }
   };
 
-  const handleCopy = () => {
-    alert('Kopieren - wird noch implementiert');
-  };
+ const handleCopy = async () => {
+  try {
+    // Zettel-Daten kopieren (ohne ID)
+    const copiedData = {
+      day: note.day,
+      name: note.name,
+      activity: note.activity,
+      x: note.x + 20, // Leicht versetzt
+      y: note.y + 20, // Leicht versetzt
+      width: note.width,
+      height: note.height,
+      color: note.color,
+      name_fs: note.name_fs,
+      activity_fs: note.activity_fs,
+      name_font: note.name_font,
+      activity_font: note.activity_font,
+      name_align: note.name_align,
+      activity_align: note.activity_align,
+      closedUntil: null, // Kopie ist immer offen
+      closeAt: note.closeAt,
+      is_position_locked: false, // Kopie ist entsperrt
+      has_image: false, // Bild wird nicht kopiert
+      image: null,
+    };
+
+    const { getSupabase } = await import('../lib/supabaseClient');
+    const client = getSupabase();
+
+    const { data, error } = await client
+      .from('zettel')
+      .insert([copiedData])
+      .select();
+
+    if (error) throw error;
+
+    setShowMenu(false);
+    alert('Zettel wurde kopiert!');
+  } catch (error) {
+    console.error('Fehler beim Kopieren:', error);
+    alert('Fehler beim Kopieren des Zettels.');
+  }
+};
 
   const handleEdit = () => {
     const { setActiveEditingNote } = useAppStore.getState();
@@ -136,7 +175,64 @@ export const NoteCard = ({ note }: NoteCardProps) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    alert('Bild-Upload wird implementiert...');
+    // Validierung
+    if (!file.type.startsWith('image/')) {
+      alert('Bitte nur Bilddateien hochladen!');
+      return;
+    }
+
+    // Max 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Bild ist zu groß! Maximal 5MB erlaubt.');
+      return;
+    }
+
+    try {
+      const { getSupabase } = await import('../lib/supabaseClient');
+      const client = getSupabase();
+
+      // Einzigartigen Dateinamen generieren
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${note.id}_${Date.now()}.${fileExt}`;
+
+      // Altes Bild löschen falls vorhanden
+      if (note.image) {
+        const oldFileName = note.image.split('/').pop();
+        if (oldFileName) {
+          await client.storage.from('zettel_bilder').remove([oldFileName]);
+        }
+      }
+
+      // Neues Bild hochladen
+      const { error: uploadError } = await client.storage
+        .from('zettel_bilder')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Öffentliche URL generieren
+      const { data: urlData } = client.storage
+        .from('zettel_bilder')
+        .getPublicUrl(fileName);
+
+      // Zettel in DB aktualisieren
+      await updateNoteInDB(note.id, {
+        image: urlData.publicUrl,
+        has_image: true
+      });
+
+    } catch (error) {
+      console.error('Fehler beim Bild-Upload:', error);
+      alert('Fehler beim Hochladen des Bildes.');
+    }
+
+    // Input zurücksetzen
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleRemoveImage = async () => {
