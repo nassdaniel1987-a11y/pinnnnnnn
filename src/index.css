@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Roboto:wght@400;700&family=Special+Elite&family=Caveat&family=Source+Code+Pro&family=Playfair+Display&family=Poppins&family=Lobster&family=Pacifico&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Kalam', cursive;
+  overflow-x: hidden;
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.h-screen { height: 100vh; }
+.max-w-screen { max-width: 100vw; }
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.min-h-full { min-height: 100%; }
+.p-2 { padding: 0.5rem; }
+.p-4 { padding: 1rem; }
+.px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-2xl { border-radius: 1rem; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+.text-white { color: white; }
+.text-lg { font-size: 1.125rem; }
+.text-sm { font-size: 0.875rem; }
+.text-center { text-align: center; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.min-w-\[120px\] { min-width: 120px; }
+.z-10 { z-index: 10; }
+.z-50 { z-index: 50; }
+.bg-gradient-to-r { background: linear-gradient(to right, var(--tw-gradient-stops)); }
+.from-blue-600 { --tw-gradient-from: #2563eb; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-purple-600 { --tw-gradient-to: #9333ea; }
+.bg-white { background-color: white; }
+.bg-opacity-20 { background-color: rgba(255,255,255,0.2); }
+.bg-red-500 { background-color: #ef4444; }
+.backdrop-blur-sm { backdrop-filter: blur(4px); }
+.hover\:bg-white:hover { background-color: white; }
+.hover\:bg-opacity-20:hover { background-color: rgba(255,255,255,0.2); }
+.transition { transition: all 0.2s; }
+.top-full { top: 100%; }
+.left-1\/2 { left: 50%; }
+.transform { transform: translateX(-50%); }
+.-translate-x-1\/2 { transform: translateX(-50%); }
+.rounded-b-lg { border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
+[contenteditable] {
+  outline: none;
+}
+
+/* Header Button Fix - VERBESSERT */
+header button {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+header button:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+header button i {
+  color: white !important;
+  font-size: 14px;
+}
+
+/* Theme Selector spezifisch */
+.theme-selector-container button {
+  color: white !important;
+}
+
+.theme-selector-container button i {
+  color: white !important;
+}
+
+/* Theme Backgrounds */
+.app-container {
+  background-size: cover;
+  background-position: center;
+  transition: background 0.5s ease;
+}
+
+.app-container[data-theme="chalkboard"] {
+  background-color: #394a3b;
+}
+
+.app-container[data-theme="space"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/ChatGPT%20Image%2017.%20Sept.%202025,%2004_24_32%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="sweets"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_pdhp4ipdhp4ipdhp%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="dino"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/generated-image%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="agent"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_bksinhbksinhbksi%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="vfb"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/ChatGPT%20Image%2018.%20Sept.%202025,%2004_00_12%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="pokemon"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_1175px1175px1175%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="pokemon2"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_2j39ot2j39ot2j39%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="pippi"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_h3sqy5h3sqy5h3sq%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="magictimals"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_sngn87sngn87sngn%20(1).png');
+  background-size: cover;
+}
+
+.app-container[data-theme="minecraft"] {
+  background: url('https://yhijcboegdbxcctiwyof.supabase.co/storage/v1/object/public/theme_backgrounds/Gemini_Generated_Image_h9j7xeh9j7xeh9j7%20(1).png');
+  background-size: cover;
+}
