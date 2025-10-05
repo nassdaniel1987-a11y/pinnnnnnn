@@ -4,17 +4,26 @@ import { days } from '../config/config';
 import { SchedulerModal } from './SchedulerModal';
 
 export const QuickActionsToolbar = () => {
-  const { isEditMode, setIsEditMode, localNotes, currentDayIndex, copiedDayNotes, setCopiedDayNotes } = useAppStore();
+  const { 
+    isEditMode, 
+    setIsEditMode, 
+    localNotes, 
+    currentDayIndex, 
+    copiedDayNotes, 
+    setCopiedDayNotes,
+    showNotification // Notification-Funktion aus dem Store holen
+  } = useAppStore();
   const [showSchedulerModal, setShowSchedulerModal] = useState(false);
 
   const handleEditMode = () => {
     setIsEditMode(!isEditMode);
+    showNotification(isEditMode ? 'Ansichtsmodus aktiviert' : 'Bearbeitungsmodus aktiviert', 'info');
   };
 
   const handleOpenAll = async () => {
     const closedNotes = localNotes.filter(note => note.closedUntil !== null);
     if (closedNotes.length === 0) {
-      alert('Es sind keine Zettel geschlossen.');
+      showNotification('Es sind keine Zettel geschlossen.', 'info');
       return;
     }
     
@@ -25,12 +34,12 @@ export const QuickActionsToolbar = () => {
     const { updateMultipleNotesInDB } = await import('../lib/supabaseClient');
     const updates = closedNotes.map(note => ({ id: note.id, closedUntil: null }));
     await updateMultipleNotesInDB(updates as any);
-    alert('Alle Zettel wurden geöffnet!');
+    showNotification('Alle Zettel wurden geöffnet!', 'success');
   };
 
   const handleArrange = async () => {
     if (localNotes.length === 0) {
-      alert('Keine Zettel zum Anordnen vorhanden.');
+      showNotification('Keine Zettel zum Anordnen vorhanden.', 'info');
       return;
     }
     
@@ -42,7 +51,7 @@ export const QuickActionsToolbar = () => {
     const { updateMultipleNotesInDB } = await import('../lib/supabaseClient');
     
     const PADDING = 20;
-    const pinnwandWidth = 1600;
+    const pinnwandWidth = 1600; // Annahme einer Standardbreite
     let currentX = PADDING;
     let currentY = PADDING;
     let rowMaxHeight = 0;
@@ -65,14 +74,14 @@ export const QuickActionsToolbar = () => {
     }
     
     await updateMultipleNotesInDB(updates as any);
-    alert('Pinnwand wurde aufgeräumt!');
+    showNotification('Pinnwand wurde aufgeräumt!', 'success');
   };
 
   const handleLockAll = async () => {
     const openNotes = localNotes.filter(note => note.closedUntil === null);
     
     if (openNotes.length === 0) {
-      alert('Alle Zettel sind bereits gesperrt.');
+      showNotification('Alle Zettel sind bereits gesperrt.', 'info');
       return;
     }
     
@@ -84,12 +93,12 @@ export const QuickActionsToolbar = () => {
     const updates = openNotes.map(note => ({ id: note.id, closedUntil: 'LOCKED' }));
     
     await updateMultipleNotesInDB(updates as any);
-    alert('Alle Zettel wurden gesperrt!');
+    showNotification('Alle Zettel wurden gesperrt!', 'success');
   };
 
   const handleCopyDay = () => {
     if (localNotes.length === 0) {
-      alert('Keine Zettel zum Kopieren vorhanden.');
+      showNotification('Keine Zettel zum Kopieren vorhanden.', 'info');
       return;
     }
     
@@ -100,12 +109,12 @@ export const QuickActionsToolbar = () => {
     });
     
     setCopiedDayNotes(notesCopy as any);
-    alert(`Tag '${days[currentDayIndex]}' mit ${localNotes.length} Zetteln kopiert.`);
+    showNotification(`Tag '${days[currentDayIndex]}' mit ${localNotes.length} Zetteln kopiert.`, 'success');
   };
 
   const handlePasteDay = async () => {
     if (!copiedDayNotes || copiedDayNotes.length === 0) {
-      alert('Kein Tag kopiert!');
+      showNotification('Kein Tag zum Einfügen kopiert!', 'info');
       return;
     }
     
@@ -120,15 +129,15 @@ export const QuickActionsToolbar = () => {
     const { error } = await copyDayNotesToDB(notesToInsert as any);
     
     if (error) {
-      alert('Fehler beim Einfügen.');
+      showNotification('Fehler beim Einfügen des Tages.', 'error');
     } else {
-      alert('Tag erfolgreich eingefügt!');
+      showNotification('Tag erfolgreich eingefügt!', 'success');
     }
   };
 
   const handleZoomFit = () => {
     if (localNotes.length === 0) {
-      alert('Keine Zettel zum Anzeigen vorhanden.');
+      showNotification('Keine Zettel zum Anzeigen vorhanden.', 'info');
       return;
     }
 
@@ -162,10 +171,6 @@ export const QuickActionsToolbar = () => {
         top: Math.max(0, scrollY),
         behavior: 'smooth'
       });
-      
-      setTimeout(() => {
-        alert('Alle Zettel sind jetzt sichtbar!');
-      }, 800);
     }
   };
 
@@ -174,11 +179,7 @@ export const QuickActionsToolbar = () => {
     if (!pinnwandArea) return;
 
     if (localNotes.length === 0) {
-      pinnwandArea.scrollTo({
-        left: 0,
-        top: 0,
-        behavior: 'smooth'
-      });
+      pinnwandArea.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
     } else {
       let avgX = 0, avgY = 0;
       localNotes.forEach(note => {
@@ -196,10 +197,6 @@ export const QuickActionsToolbar = () => {
         top: Math.max(0, scrollY),
         behavior: 'smooth'
       });
-      
-      setTimeout(() => {
-        alert('Ansicht zentriert!');
-      }, 800);
     }
   };
 
@@ -209,7 +206,7 @@ export const QuickActionsToolbar = () => {
 
   const handleClearDay = async () => {
     if (localNotes.length === 0) {
-      alert('Der Tag ist bereits leer.');
+      showNotification('Der Tag ist bereits leer.', 'info');
       return;
     }
 
@@ -226,7 +223,6 @@ export const QuickActionsToolbar = () => {
     const client = getSupabase();
     
     try {
-      // Lösche Bilder von Zetteln mit Bildern
       const notesWithImages = localNotes.filter(note => note.image);
       for (const note of notesWithImages) {
         if (note.image) {
@@ -237,18 +233,13 @@ export const QuickActionsToolbar = () => {
         }
       }
       
-      // Lösche alle Zettel des Tages
-      const { error } = await client
-        .from('zettel')
-        .delete()
-        .eq('day', dayName);
-      
+      const { error } = await client.from('zettel').delete().eq('day', dayName);
       if (error) throw error;
       
-      alert(`Alle ${noteCount} Zettel von '${dayName}' wurden gelöscht!`);
+      showNotification(`Alle ${noteCount} Zettel von '${dayName}' wurden gelöscht!`, 'success');
     } catch (error) {
       console.error('Fehler beim Löschen des Tages:', error);
-      alert('Ein Fehler ist beim Löschen aufgetreten.');
+      showNotification('Ein Fehler ist beim Löschen aufgetreten.', 'error');
     }
   };
 
@@ -267,7 +258,6 @@ export const QuickActionsToolbar = () => {
         padding: '16px 0',
       }}
     >
-      {/* Edit Mode Toggle */}
       <QuickActionButton
         icon={isEditMode ? 'fa-eye' : 'fa-pen'}
         title={isEditMode ? 'Ansichtsmodus' : 'Bearbeitungsmodus'}
@@ -275,83 +265,20 @@ export const QuickActionsToolbar = () => {
         variant="edit-mode"
         active={isEditMode}
       />
-
       <Divider />
-
-      {/* Zettel Aktionen */}
-      <QuickActionButton
-        icon="fa-lock-open"
-        title="Alle Zettel öffnen"
-        onClick={handleOpenAll}
-        variant="success"
-      />
-      
-      <QuickActionButton
-        icon="fa-magic"
-        title="Automatisch anordnen"
-        onClick={handleArrange}
-        variant="info"
-      />
-      
-      <QuickActionButton
-        icon="fa-lock"
-        title="Alle Zettel sperren"
-        onClick={handleLockAll}
-        variant="warning"
-      />
-
+      <QuickActionButton icon="fa-lock-open" title="Alle Zettel öffnen" onClick={handleOpenAll} variant="success" />
+      <QuickActionButton icon="fa-magic" title="Automatisch anordnen" onClick={handleArrange} variant="info" />
+      <QuickActionButton icon="fa-lock" title="Alle Zettel sperren" onClick={handleLockAll} variant="warning" />
       <Divider />
-
-      {/* Tag Aktionen */}
-      <QuickActionButton
-        icon="fa-clone"
-        title="Tag kopieren"
-        onClick={handleCopyDay}
-      />
-      
-      <QuickActionButton
-        icon="fa-clipboard"
-        title="Tag einfügen"
-        onClick={handlePasteDay}
-      />
-
+      <QuickActionButton icon="fa-clone" title="Tag kopieren" onClick={handleCopyDay} />
+      <QuickActionButton icon="fa-clipboard" title="Tag einfügen" onClick={handlePasteDay} />
       <Divider />
-
-      {/* Ansicht Aktionen */}
-      <QuickActionButton
-        icon="fa-compress-arrows-alt"
-        title="Alles anzeigen"
-        onClick={handleZoomFit}
-      />
-      
-      <QuickActionButton
-        icon="fa-crosshairs"
-        title="Ansicht zentrieren"
-        onClick={handleCenterView}
-      />
-      
-      <QuickActionButton
-        icon="fa-calendar-alt"
-        title="Zettel-Planer"
-        onClick={handleScheduler}
-        variant="info"
-      />
-
+      <QuickActionButton icon="fa-compress-arrows-alt" title="Alles anzeigen" onClick={handleZoomFit} />
+      <QuickActionButton icon="fa-crosshairs" title="Ansicht zentrieren" onClick={handleCenterView} />
+      <QuickActionButton icon="fa-calendar-alt" title="Zettel-Planer" onClick={handleScheduler} variant="info" />
       <Divider />
-
-      {/* Cleanup */}
-      <QuickActionButton
-        icon="fa-trash-alt"
-        title="Tag leeren"
-        onClick={handleClearDay}
-        variant="danger"
-      />
-
-      {/* Scheduler Modal */}
-      <SchedulerModal 
-        isOpen={showSchedulerModal} 
-        onClose={() => setShowSchedulerModal(false)} 
-      />
+      <QuickActionButton icon="fa-trash-alt" title="Tag leeren" onClick={handleClearDay} variant="danger" />
+      <SchedulerModal isOpen={showSchedulerModal} onClose={() => setShowSchedulerModal(false)} />
     </div>
   );
 };
@@ -371,7 +298,7 @@ const QuickActionButton = ({ icon, title, onClick, variant, active }: QuickActio
       return {
         background: active ? 'linear-gradient(135deg, #10b981, #059669)' : 'white',
         color: active ? 'white' : '#6b7280',
-        boxShadow: active ? '0 0 0 2px rgba(16, 185, 129, 0.3)' : undefined,
+        boxShadow: active ? '0 0 0 2px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(0,0,0,0.15)',
       };
     }
     return {};
@@ -403,11 +330,9 @@ const QuickActionButton = ({ icon, title, onClick, variant, active }: QuickActio
           e.currentTarget.style.transform = 'translateX(4px) scale(1.05)';
           e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
           
-          if (!variant || variant === 'edit-mode') {
-            if (!active) {
+          if (!variant || (variant === 'edit-mode' && !active)) {
               e.currentTarget.style.color = 'white';
               e.currentTarget.style.background = '#3b82f6';
-            }
           } else if (variant === 'success') {
             e.currentTarget.style.background = '#22c55e';
             e.currentTarget.style.color = 'white';
@@ -431,11 +356,14 @@ const QuickActionButton = ({ icon, title, onClick, variant, active }: QuickActio
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'translateX(0) scale(1)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
           
           if (variant === 'edit-mode') {
-            Object.assign(e.currentTarget.style, getVariantStyle());
+            const styles = getVariantStyle();
+            e.currentTarget.style.boxShadow = styles.boxShadow || '0 4px 12px rgba(0,0,0,0.15)';
+            e.currentTarget.style.background = styles.background;
+            e.currentTarget.style.color = styles.color;
           } else {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
             e.currentTarget.style.background = 'white';
             e.currentTarget.style.color = '#6b7280';
           }
@@ -450,7 +378,6 @@ const QuickActionButton = ({ icon, title, onClick, variant, active }: QuickActio
       >
         <i className={`fas ${icon}`}></i>
         
-        {/* Tooltip */}
         <div
           className="tooltip"
           style={{

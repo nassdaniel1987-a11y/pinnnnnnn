@@ -1,8 +1,13 @@
+import { useAppStore } from '../store/appStore';
 import type { Note } from '../types/types';
 
 export const dataURLtoBlob = (dataurl: string): Blob => {
   const arr = dataurl.split(',');
-  const mime = arr[0].match(/:(.*?);/)![1];
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  if (!mimeMatch) {
+    throw new Error('Invalid data URL');
+  }
+  const mime = mimeMatch[1];
   const bstr = atob(arr[1]);
   let n = bstr.length;
   const u8arr = new Uint8Array(n);
@@ -68,4 +73,52 @@ export const findEmptySpot = (
   }
 
   return null;
+};
+
+// --- NEUER CODE ---
+// Diese Funktion prüft auf Kollisionen und gibt eine neue, korrigierte Position zurück.
+export const resolveCollisions = (
+  finalRect: { left: number; top: number; right: number; bottom: number },
+  draggedNoteId: number
+): { x: number; y: number } => {
+  const allNotes = useAppStore.getState().localNotes;
+  const PADDING = 10;
+  let finalX = finalRect.left;
+  let finalY = finalRect.top;
+  let collision = false;
+
+  do {
+    collision = false;
+    for (const note of allNotes) {
+      if (note.id === draggedNoteId) continue;
+
+      const otherRect = {
+        left: note.x,
+        top: note.y,
+        right: note.x + note.width,
+        bottom: note.y + note.height,
+      };
+
+      // Überlappungs-Check
+      const overlaps = !(
+        finalRect.right < otherRect.left ||
+        finalRect.left > otherRect.right ||
+        finalRect.bottom < otherRect.top ||
+        finalRect.top > otherRect.bottom
+      );
+
+      if (overlaps) {
+        collision = true;
+        // Verschiebe den Zettel nach rechts neben die Kollision
+        finalX = otherRect.right + PADDING;
+        
+        // Aktualisiere die finale Position für den nächsten Check
+        finalRect.left = finalX;
+        finalRect.right = finalX + (finalRect.right - (finalRect.left - (finalRect.right - finalRect.left))); // Breite beibehalten
+        break; 
+      }
+    }
+  } while (collision);
+
+  return { x: Math.max(0, finalX), y: Math.max(0, finalY) };
 };

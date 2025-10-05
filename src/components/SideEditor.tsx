@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/appStore';
 import { updateNoteInDB } from '../lib/supabaseClient';
+import type { Note } from '../types/types';
+
+// Hilfsfunktion, um Formatierungen auf eine Auswahl anzuwenden
+const applyStyle = (style: string, value: string) => {
+    document.execCommand('styleWithCSS', false, 'true');
+    document.execCommand(style, false, value);
+};
 
 export const SideEditor = () => {
   const { activeEditingNote, setActiveEditingNote } = useAppStore();
+  
+  // Refs für die bearbeitbaren Divs
+  const nameDivRef = useRef<HTMLDivElement>(null);
+  const activityDivRef = useRef<HTMLDivElement>(null);
+
+  // Lokaler State für die Bearbeitung
   const [nameContent, setNameContent] = useState('');
   const [activityContent, setActivityContent] = useState('');
   const [nameFontSize, setNameFontSize] = useState(16);
@@ -13,6 +26,7 @@ export const SideEditor = () => {
   const [nameAlign, setNameAlign] = useState('left');
   const [activityAlign, setActivityAlign] = useState('left');
 
+  // Wenn ein Zettel zum Bearbeiten ausgewählt wird, fülle den State
   useEffect(() => {
     if (activeEditingNote) {
       setNameContent(activeEditingNote.name || '');
@@ -26,11 +40,12 @@ export const SideEditor = () => {
     }
   }, [activeEditingNote]);
 
-  const handleClose = async () => {
-    if (activeEditingNote) {
+  // Funktion zum Speichern und Schließen
+  const handleCloseAndSave = async () => {
+    if (activeEditingNote && nameDivRef.current && activityDivRef.current) {
       await updateNoteInDB(activeEditingNote.id, {
-        name: nameContent,
-        activity: activityContent,
+        name: nameDivRef.current.innerHTML,
+        activity: activityDivRef.current.innerHTML,
         name_fs: nameFontSize,
         activity_fs: activityFontSize,
         name_font: nameFont,
@@ -55,6 +70,19 @@ export const SideEditor = () => {
     { value: "'Pacifico', cursive", label: 'Pacifico' },
     { value: "'Lobster', cursive", label: 'Lobster' },
   ];
+  
+  // Dummy-Note für die Vorschau mit den aktuellen Werten
+  const previewNote: Note = {
+      ...activeEditingNote,
+      name: nameContent,
+      activity: activityContent,
+      name_fs: nameFontSize,
+      activity_fs: activityFontSize,
+      name_font: nameFont,
+      activity_font: activityFont,
+      name_align: nameAlign,
+      activity_align: activityAlign
+  };
 
   return (
     <div
@@ -87,7 +115,7 @@ export const SideEditor = () => {
         }}>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>Zettel bearbeiten</h3>
           <button
-            onClick={handleClose}
+            onClick={handleCloseAndSave}
             style={{
               background: 'rgba(255,255,255,0.1)',
               border: 'none',
@@ -101,12 +129,8 @@ export const SideEditor = () => {
               justifyContent: 'center',
               transition: 'all 0.2s',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
           >
             <i className="fas fa-times"></i>
           </button>
@@ -120,30 +144,34 @@ export const SideEditor = () => {
           padding: '16px',
           minHeight: '120px',
         }}>
-          <div style={{
-            fontSize: `${nameFontSize}px`,
-            fontFamily: nameFont,
-            textAlign: nameAlign as any,
-            fontWeight: 600,
-            color: '#1f2937',
-            marginBottom: '8px',
-            background: activeEditingNote.color || '#ffffe0',
-            padding: '8px',
-            borderRadius: '4px',
-          }}>
-            {nameContent || 'Titel...'}
-          </div>
-          <div style={{
-            fontSize: `${activityFontSize}px`,
-            fontFamily: activityFont,
-            textAlign: activityAlign as any,
-            color: '#6b7280',
-            background: activeEditingNote.color || '#ffffe0',
-            padding: '8px',
-            borderRadius: '4px',
-          }}>
-            {activityContent || 'Aktivität...'}
-          </div>
+           <div style={{
+              background: previewNote.color || '#ffffe0',
+              padding: '16px',
+              borderRadius: '4px',
+              color: '#1f2937',
+           }}>
+              <div
+                style={{
+                    fontSize: `${previewNote.name_fs}px`,
+                    fontFamily: previewNote.name_font,
+                    textAlign: previewNote.name_align as any,
+                    fontWeight: 600,
+                    marginBottom: '8px',
+                    wordWrap: 'break-word'
+                }}
+                dangerouslySetInnerHTML={{ __html: previewNote.name }}
+              />
+              <div
+                style={{
+                    fontSize: `${previewNote.activity_fs}px`,
+                    fontFamily: previewNote.activity_font,
+                    textAlign: previewNote.activity_align as any,
+                    wordWrap: 'break-word',
+                    color: '#4b5563'
+                }}
+                dangerouslySetInnerHTML={{ __html: previewNote.activity }}
+              />
+           </div>
         </div>
       </div>
 
@@ -158,10 +186,11 @@ export const SideEditor = () => {
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#a0aec0' }}>
             Titel
           </label>
-          <input
-            type="text"
-            value={nameContent}
-            onChange={(e) => setNameContent(e.target.value)}
+          <div
+            ref={nameDivRef}
+            contentEditable
+            onInput={(e) => setNameContent(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: nameContent }}
             style={{
               width: '100%',
               background: '#1a202c',
@@ -170,8 +199,8 @@ export const SideEditor = () => {
               padding: '12px',
               color: '#e2e8f0',
               fontSize: '14px',
+              minHeight: '40px',
             }}
-            placeholder="Zettel Titel..."
           />
         </div>
 
@@ -183,14 +212,7 @@ export const SideEditor = () => {
           marginBottom: '24px',
           border: '1px solid #4a5568',
         }}>
-          <h4 style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: '#a0aec0',
-            marginBottom: '16px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#a0aec0', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Titel-Formatierung
           </h4>
 
@@ -201,8 +223,7 @@ export const SideEditor = () => {
             </div>
             <input
               type="range"
-              min="10"
-              max="40"
+              min="10" max="40"
               value={nameFontSize}
               onChange={(e) => setNameFontSize(Number(e.target.value))}
               style={{ width: '100%' }}
@@ -216,21 +237,9 @@ export const SideEditor = () => {
             <select
               value={nameFont}
               onChange={(e) => setNameFont(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#4a5568',
-                border: '1px solid #718096',
-                color: '#e2e8f0',
-                borderRadius: '6px',
-                padding: '8px',
-                fontSize: '14px',
-              }}
+              style={{ width: '100%', background: '#4a5568', border: '1px solid #718096', color: '#e2e8f0', borderRadius: '6px', padding: '8px', fontSize: '14px' }}
             >
-              {fonts.map(font => (
-                <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
-                  {font.label}
-                </option>
-              ))}
+              {fonts.map(font => <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>{font.label}</option>)}
             </select>
           </div>
 
@@ -241,15 +250,7 @@ export const SideEditor = () => {
             <select
               value={nameAlign}
               onChange={(e) => setNameAlign(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#4a5568',
-                border: '1px solid #718096',
-                color: '#e2e8f0',
-                borderRadius: '6px',
-                padding: '8px',
-                fontSize: '14px',
-              }}
+              style={{ width: '100%', background: '#4a5568', border: '1px solid #718096', color: '#e2e8f0', borderRadius: '6px', padding: '8px', fontSize: '14px' }}
             >
               <option value="left">Links</option>
               <option value="center">Zentriert</option>
@@ -265,9 +266,11 @@ export const SideEditor = () => {
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#a0aec0' }}>
             Aktivität
           </label>
-          <textarea
-            value={activityContent}
-            onChange={(e) => setActivityContent(e.target.value)}
+           <div
+            ref={activityDivRef}
+            contentEditable
+            onInput={(e) => setActivityContent(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: activityContent }}
             style={{
               width: '100%',
               background: '#1a202c',
@@ -279,25 +282,12 @@ export const SideEditor = () => {
               minHeight: '100px',
               resize: 'vertical',
             }}
-            placeholder="Aktivität beschreiben..."
           />
         </div>
 
         {/* Aktivität Formatierung */}
-        <div style={{
-          background: 'rgba(0,0,0,0.2)',
-          borderRadius: '8px',
-          padding: '16px',
-          border: '1px solid #4a5568',
-        }}>
-          <h4 style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: '#a0aec0',
-            marginBottom: '16px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}>
+        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '16px', border: '1px solid #4a5568' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#a0aec0', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Aktivität-Formatierung
           </h4>
 
@@ -308,8 +298,7 @@ export const SideEditor = () => {
             </div>
             <input
               type="range"
-              min="10"
-              max="40"
+              min="10" max="40"
               value={activityFontSize}
               onChange={(e) => setActivityFontSize(Number(e.target.value))}
               style={{ width: '100%' }}
@@ -323,21 +312,9 @@ export const SideEditor = () => {
             <select
               value={activityFont}
               onChange={(e) => setActivityFont(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#4a5568',
-                border: '1px solid #718096',
-                color: '#e2e8f0',
-                borderRadius: '6px',
-                padding: '8px',
-                fontSize: '14px',
-              }}
+              style={{ width: '100%', background: '#4a5568', border: '1px solid #718096', color: '#e2e8f0', borderRadius: '6px', padding: '8px', fontSize: '14px' }}
             >
-              {fonts.map(font => (
-                <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
-                  {font.label}
-                </option>
-              ))}
+              {fonts.map(font => <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>{font.label}</option>)}
             </select>
           </div>
 
@@ -348,15 +325,7 @@ export const SideEditor = () => {
             <select
               value={activityAlign}
               onChange={(e) => setActivityAlign(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#4a5568',
-                border: '1px solid #718096',
-                color: '#e2e8f0',
-                borderRadius: '6px',
-                padding: '8px',
-                fontSize: '14px',
-              }}
+              style={{ width: '100%', background: '#4a5568', border: '1px solid #718096', color: '#e2e8f0', borderRadius: '6px', padding: '8px', fontSize: '14px' }}
             >
               <option value="left">Links</option>
               <option value="center">Zentriert</option>
@@ -368,12 +337,8 @@ export const SideEditor = () => {
 
       <style>{`
         @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
         }
       `}</style>
     </div>

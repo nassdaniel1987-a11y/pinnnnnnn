@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { useEffect, useState } from 'react';
 import { initSupabase } from './lib/supabaseClient';
 import { useAppStore } from './store/appStore';
@@ -6,10 +8,14 @@ import { PinnwandArea } from './components/PinnwandArea';
 import { FAB } from './components/FAB';
 import { QuickActionsToolbar } from './components/QuickActionsToolbar';
 import { SideEditor } from './components/SideEditor';
+import { useIOSFixes } from './hooks/useIOSFixes'; // <-- NEUER IMPORT
+import { Notification } from './components/Notification';
 
 function App() {
   const { currentTheme, localNotes } = useAppStore();
   const [isReady, setIsReady] = useState(false);
+
+  useIOSFixes(); // <-- HIER WIRD DER NEUE HOOK AUFGERUFEN
 
   useEffect(() => {
     initSupabase();
@@ -73,11 +79,12 @@ function App() {
     );
   }
 
-  return (
+ return (
     <div 
       className="app-container flex flex-col h-screen max-w-screen overflow-hidden"
       data-theme={currentTheme}
     >
+      <Notification /> {/* <-- HIER HINZUFÜGEN */}
       <Header />
       <PinnwandArea />
       <QuickActionsToolbar />

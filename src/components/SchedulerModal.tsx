@@ -17,303 +17,82 @@ export const SchedulerModal = ({ isOpen, onClose }: SchedulerModalProps) => {
     stripHtml(a.name).localeCompare(stripHtml(b.name))
   );
 
-  const handleOpenTimeChange = async (noteId: number, newTime: string) => {
-    await updateNoteInDB(noteId, { closedUntil: newTime || null });
-  };
-
-  const handleCloseTimeChange = async (noteId: number, newTime: string) => {
-    await updateNoteInDB(noteId, { closeAt: newTime || null });
+  const handleTimeChange = async (noteId: number, field: 'closedUntil' | 'closeAt', newTime: string) => {
+    await updateNoteInDB(noteId, { [field]: newTime || null });
   };
 
   const handleToggleLock = async (note: any) => {
     const isLocked = note.closedUntil === 'LOCKED';
-    if (isLocked) {
-      await updateNoteInDB(note.id, { closedUntil: null });
-    } else {
-      await updateNoteInDB(note.id, { closedUntil: 'LOCKED' });
-    }
+    await updateNoteInDB(note.id, { closedUntil: isLocked ? null : 'LOCKED' });
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-        padding: '20px',
-      }}
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-5 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div
+      <div 
+        className="bg-slate-100/95 backdrop-blur-md border border-white/50 shadow-2xl text-gray-800 rounded-2xl p-7 w-full max-w-4xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'rgba(248, 250, 252, 0.98)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.6)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.37)',
-          color: '#1f2937',
-          borderRadius: '16px',
-          padding: '28px',
-          width: '90%',
-          maxWidth: '1000px',
-          maxHeight: '85vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
       >
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-          paddingBottom: '16px',
-          borderBottom: '2px solid rgba(0,0,0,0.1)',
-        }}>
-          <h3 style={{
-            fontSize: '22px',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            margin: 0,
-          }}>
-            <i className="fas fa-calendar-alt" style={{ color: '#3b82f6', fontSize: '20px' }}></i>
+        <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-gray-200">
+          <h3 className="text-2xl font-bold flex items-center gap-3">
+            <i className="fas fa-calendar-alt text-blue-600"></i>
             <span>Zettel-Planer für '{days[currentDayIndex]}'</span>
           </h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(107, 114, 128, 0.1)',
-              border: 'none',
-              color: '#6b7280',
-              width: '40px',
-              height: '40px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '22px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(107, 114, 128, 0.2)';
-              e.currentTarget.style.color = '#374151';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(107, 114, 128, 0.1)';
-              e.currentTarget.style.color = '#6b7280';
-            }}
-          >
-            ×
+          <button onClick={onClose} className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-10 h-10 rounded-lg text-2xl transition-all">
+            &times;
           </button>
         </div>
 
-        {/* Table Header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 140px 140px 60px',
-          gap: '16px',
-          padding: '12px 16px',
-          background: 'rgba(59, 130, 246, 0.08)',
-          borderRadius: '8px',
-          marginBottom: '12px',
-          fontWeight: 600,
-          fontSize: '13px',
-          color: '#4b5563',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}>
-          <div>Zettel</div>
-          <div style={{ textAlign: 'center' }}>
-            <i className="fas fa-door-open" style={{ marginRight: '6px', color: '#22c55e' }}></i>
-            Öffnet um
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <i className="fas fa-door-closed" style={{ marginRight: '6px', color: '#ef4444' }}></i>
-            Schließt um
-          </div>
-          <div style={{ textAlign: 'center' }}>Sperre</div>
+        <div className="grid grid-cols-[1fr,140px,140px,80px] gap-4 px-4 py-2 bg-blue-500/10 rounded-lg mb-3 font-semibold text-sm text-gray-600 uppercase tracking-wider text-center">
+          <div className="text-left">Zettel</div>
+          <div><i className="fas fa-door-open mr-2 text-green-500"></i>Öffnet um</div>
+          <div><i className="fas fa-door-closed mr-2 text-red-500"></i>Schließt um</div>
+          <div>Sperre</div>
         </div>
 
-        {/* List */}
-        <div style={{
-          overflowY: 'auto',
-          flex: 1,
-          paddingRight: '8px',
-        }}>
-          {sortedNotes.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              color: '#9ca3af', 
-              padding: '48px 32px',
-              fontSize: '15px',
-            }}>
-              <i className="fas fa-inbox" style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3, display: 'block' }}></i>
-              Für diesen Tag gibt es keine Zettel.
-            </div>
-          ) : (
-            sortedNotes.map((note, index) => {
+        <div className="overflow-y-auto flex-1 pr-2">
+          {sortedNotes.length > 0 ? (
+            sortedNotes.map((note) => {
               const isLocked = note.closedUntil === 'LOCKED';
               const openTimeValue = (note.closedUntil && !isLocked) ? note.closedUntil : '';
               const closeTimeValue = note.closeAt || '';
 
               return (
-                <div
-                  key={note.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 140px 140px 60px',
-                    gap: '16px',
-                    alignItems: 'center',
-                    padding: '14px 16px',
-                    borderBottom: index < sortedNotes.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
-                    transition: 'background 0.2s',
-                    borderRadius: '6px',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  {/* Title */}
-                  <div
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      color: '#1f2937',
-                    }}
-                    title={stripHtml(note.name)}
-                  >
+                <div key={note.id} className="grid grid-cols-[1fr,140px,140px,80px] gap-4 items-center px-4 py-3 border-b border-gray-200/80 hover:bg-blue-500/5 rounded-md transition-colors">
+                  <div className="text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap text-gray-800" title={stripHtml(note.name)}>
                     {stripHtml(note.name) || 'Unbenannter Zettel'}
                   </div>
-
-                  {/* Open Time */}
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <input
-                      type="time"
-                      value={openTimeValue}
-                      onChange={(e) => handleOpenTimeChange(note.id, e.target.value)}
-                      disabled={isLocked}
-                      style={{
-                        width: '110px',
-                        background: isLocked ? '#f3f4f6' : '#ffffff',
-                        border: '1px solid #d1d5db',
-                        color: isLocked ? '#9ca3af' : '#1f2937',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
-                        fontSize: '13px',
-                        cursor: isLocked ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                      onFocus={(e) => {
-                        if (!isLocked) {
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                        }
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#d1d5db';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    />
+                  
+                  <div className="flex justify-center">
+                      <input type="time" value={openTimeValue} onChange={(e) => handleTimeChange(note.id, 'closedUntil', e.target.value)} disabled={isLocked} className="bg-gray-700 text-gray-200 border-gray-600 rounded px-2 py-1 text-sm"/>
                   </div>
 
-                  {/* Close Time */}
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <input
-                      type="time"
-                      value={closeTimeValue}
-                      onChange={(e) => handleCloseTimeChange(note.id, e.target.value)}
-                      style={{
-                        width: '110px',
-                        background: '#ffffff',
-                        border: '1px solid #d1d5db',
-                        color: '#1f2937',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#3b82f6';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#d1d5db';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    />
+                  <div className="flex justify-center">
+                      <input type="time" value={closeTimeValue} onChange={(e) => handleTimeChange(note.id, 'closeAt', e.target.value)} className="bg-gray-700 text-gray-200 border-gray-600 rounded px-2 py-1 text-sm"/>
                   </div>
 
-                  {/* Lock Button */}
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <button
-                      onClick={() => handleToggleLock(note)}
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s',
-                        background: isLocked ? '#ef4444' : '#6b7280',
-                        color: 'white',
-                      }}
-                      title={isLocked ? 'Zettel entsperren' : 'Dauerhaft sperren'}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.1)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    >
-                      <i className={`fas ${isLocked ? 'fa-lock' : 'fa-lock-open'}`} style={{ fontSize: '14px' }}></i>
-                    </button>
+                  <div className="flex justify-center">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={isLocked} onChange={() => handleToggleLock(note)} className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                    </label>
                   </div>
                 </div>
               );
             })
+          ) : (
+            <div className="text-center text-gray-500 py-12 text-base">
+              <i className="fas fa-inbox text-5xl mb-4 opacity-30 block"></i>
+              Für diesen Tag gibt es keine Zettel.
+            </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div style={{
-          marginTop: '20px',
-          paddingTop: '16px',
-          borderTop: '2px solid rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-        }}>
-          <i className="fas fa-info-circle" style={{ color: '#3b82f6', fontSize: '14px' }}></i>
-          <p style={{
-            fontSize: '13px',
-            color: '#6b7280',
-            margin: 0,
-          }}>
-            Änderungen werden automatisch gespeichert
-          </p>
+        <div className="mt-5 pt-4 border-t-2 border-gray-200 flex items-center justify-center gap-2 text-xs text-gray-500">
+          <i className="fas fa-info-circle text-blue-600"></i>
+          <p className="m-0">Änderungen werden automatisch gespeichert</p>
         </div>
       </div>
     </div>

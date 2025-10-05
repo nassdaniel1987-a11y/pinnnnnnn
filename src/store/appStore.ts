@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { Note, ThemeName } from '../types/types';
 
+interface NotificationState {
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
 interface AppState {
   // Daten
   localNotes: Note[];
@@ -10,7 +15,8 @@ interface AppState {
   copiedDayNotes: Note[] | null;
   currentTheme: ThemeName;
   activeEditingNote: Note | null;
-  
+  notification: NotificationState;
+
   // Aktionen
   setLocalNotes: (notes: Note[]) => void;
   setCurrentDayIndex: (index: number) => void;
@@ -19,6 +25,8 @@ interface AppState {
   setCopiedDayNotes: (notes: Note[] | null) => void;
   setCurrentTheme: (theme: ThemeName) => void;
   setActiveEditingNote: (note: Note | null) => void;
+  showNotification: (message: string, type?: NotificationState['type']) => void;
+  hideNotification: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -33,6 +41,7 @@ export const useAppStore = create<AppState>((set) => ({
   copiedDayNotes: null,
   currentTheme: (localStorage.getItem('selectedTheme') as ThemeName) || 'chalkboard',
   activeEditingNote: null,
+  notification: { message: '', type: 'info' },
   
   // Aktionen
   setLocalNotes: (notes) => set({ localNotes: notes }),
@@ -44,7 +53,7 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem('selectedTheme', theme);
     set({ currentTheme: theme });
   },
-  setActiveEditingNote: (note) => set({ activeEditingNote: note }),activeEditingNote: null as any,
-setActiveEditingNote: (note: any) => set({ activeEditingNote: note }),
-
+  setActiveEditingNote: (note) => set({ activeEditingNote: note }),
+  showNotification: (message, type = 'info') => set({ notification: { message, type } }),
+  hideNotification: () => set(state => ({ notification: { ...state.notification, message: '' } })),
 }));

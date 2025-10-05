@@ -6,9 +6,10 @@ import { findEmptySpot } from '../utils/utils';
 
 export const FAB = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { currentDayIndex, localNotes, copiedNote } = useAppStore();
+  const { currentDayIndex, localNotes, copiedNote, showNotification } = useAppStore();
 
   const addNote = async (withImage: boolean) => {
+    setIsOpen(false);
     const dayName = days[currentDayIndex];
     const noteWidth = 240;
     const noteHeight = withImage ? 280 : 150;
@@ -19,7 +20,7 @@ export const FAB = () => {
     const position = findEmptySpot(localNotes, noteWidth, noteHeight, pinnwandArea);
     
     if (!position) {
-      alert('Die Pinnwand ist zu voll. Bitte schaffe erst Platz!');
+      showNotification('Die Pinnwand ist zu voll. Bitte schaffe erst Platz!', 'error');
       return;
     }
 
@@ -45,12 +46,13 @@ export const FAB = () => {
     };
 
     await addNoteToDB(newNote);
-    setIsOpen(false);
+    showNotification('Neuer Zettel hinzugefügt!', 'success');
   };
 
   const pasteNote = async () => {
+    setIsOpen(false);
     if (!copiedNote) {
-      alert('Kein Zettel kopiert!');
+      showNotification('Kein Zettel zum Einfügen kopiert!', 'info');
       return;
     }
 
@@ -65,7 +67,7 @@ export const FAB = () => {
     );
 
     if (!position) {
-      alert('Kein freier Platz zum Einfügen!');
+      showNotification('Kein freier Platz zum Einfügen!', 'error');
       return;
     }
 
@@ -78,67 +80,48 @@ export const FAB = () => {
     };
 
     await addNoteToDB(newNote);
-    setIsOpen(false);
+    showNotification('Zettel eingefügt!', 'success');
   };
 
   return (
     <>
-      {/* Backdrop */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.1)',
-            zIndex: 999,
-          }}
+          className="fab-backdrop active"
         />
       )}
 
-      {/* FAB Container */}
-      <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000 }}>
-        {/* Menu Items */}
-        {isOpen && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+      <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '12px', 
+            marginBottom: '16px',
+            transition: 'all 0.3s',
+            opacity: isOpen ? 1 : 0,
+            transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
+        }}>
             {copiedNote && (
               <button
                 onClick={pasteNote}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '14px 20px',
-                  background: 'white',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: '#374151',
+                  display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px',
+                  background: 'white', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: '#374151',
                 }}
               >
                 <i className="fas fa-paste" style={{ width: '20px', color: '#22c55e' }}></i>
-                <span>Einfügen</span>
+                <span>Zettel einfügen</span>
               </button>
             )}
             
             <button
               onClick={() => addNote(false)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '14px 20px',
-                background: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px',
+                background: 'white', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: '#374151',
               }}
             >
               <i className="fas fa-font" style={{ width: '20px', color: '#3b82f6' }}></i>
@@ -148,46 +131,29 @@ export const FAB = () => {
             <button
               onClick={() => addNote(true)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '14px 20px',
-                background: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px',
+                background: 'white', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: '#374151',
               }}
             >
               <i className="fas fa-image" style={{ width: '20px', color: '#3b82f6' }}></i>
               <span>Mit Bild</span>
             </button>
-          </div>
-        )}
+        </div>
 
-        {/* Main FAB Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
+            width: '64px', height: '64px', borderRadius: '50%',
             background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '24px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: 'none',
+            cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: 'white', fontSize: '24px',
             transition: 'all 0.3s',
+            transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
           }}
         >
-          <i className={`fas ${isOpen ? 'fa-times' : 'fa-plus'}`}></i>
+          <i className={`fas fa-plus`}></i>
         </button>
       </div>
     </>

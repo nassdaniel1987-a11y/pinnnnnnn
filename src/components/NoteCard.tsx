@@ -1,8 +1,11 @@
+// src/components/NoteCard.tsx
+
 import { useState, useRef, useEffect } from 'react';
 import interact from 'interactjs';
 import { useAppStore } from '../store/appStore';
 import { updateNoteInDB, deleteNoteFromDB } from '../lib/supabaseClient';
 import { TimeLockModal } from './TimeLockModal';
+import { resolveCollisions } from '../utils/utils'; // <-- HIER IMPORTIEREN WIR DIE NEUE FUNKTION
 
 interface NoteCardProps {
   note: any;
@@ -29,35 +32,50 @@ export const NoteCard = ({ note }: NoteCardProps) => {
 
     let x = 0;
     let y = 0;
+    // Zusätzlich die originalen Koordinaten beim Start speichern
+    let originalX = 0;
+    let originalY = 0;
 
     const interactable = interact(element)
       .draggable({
         listeners: {
-          start: () => {
+          start: (event) => {
             element.classList.add('dragging');
+            // Koordinaten aus dem Style-Attribut lesen
+            originalX = parseFloat(event.target.style.left) || 0;
+            originalY = parseFloat(event.target.style.top) || 0;
+            x = 0;
+            y = 0;
           },
           move: (event) => {
             x += event.dx;
             y += event.dy;
             element.style.transform = `translate(${x}px, ${y}px)`;
           },
-          end: async () => {
+          end: async (event) => {
             element.classList.remove('dragging');
-            const rect = element.getBoundingClientRect();
-            const pinnwand = document.getElementById('pinnwand-area');
-            if (pinnwand) {
-              const pinnwandRect = pinnwand.getBoundingClientRect();
-              const finalX = rect.left - pinnwandRect.left + pinnwand.scrollLeft;
-              const finalY = rect.top - pinnwandRect.top + pinnwand.scrollTop;
-              
-              element.style.transform = '';
-              element.style.left = `${finalX}px`;
-              element.style.top = `${finalY}px`;
-              
-              await updateNoteInDB(note.id, { x: finalX, y: finalY });
-              x = 0;
-              y = 0;
-            }
+            element.style.transform = '';
+
+            const finalRect = {
+              left: originalX + x,
+              top: originalY + y,
+              right: originalX + x + element.offsetWidth,
+              bottom: originalY + y + element.offsetHeight
+            };
+
+            // =================================================================
+            // === HIER IST DIE EINZIGE ÄNDERUNG IM VERGLEICH ZU DEINEM CODE ===
+            // =================================================================
+            // Rufe die Kollisions-Funktion auf, bevor du speicherst
+            const finalPosition = resolveCollisions(finalRect, note.id);
+            
+            element.style.left = `${finalPosition.x}px`;
+            element.style.top = `${finalPosition.y}px`;
+            
+            await updateNoteInDB(note.id, { x: finalPosition.x, y: finalPosition.y });
+            // =================================================================
+            // === ENDE DER ÄNDERUNG                                         ===
+            // =================================================================
           },
         },
       })

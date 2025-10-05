@@ -4,7 +4,16 @@ import { ThemeSelector } from './ThemeSelector';
 import { WeatherWidget } from './WeatherWidget';
 
 export const Header = () => {
-  const { currentDayIndex, setCurrentDayIndex, isEditMode, setIsEditMode, localNotes, copiedDayNotes, setCopiedDayNotes } = useAppStore();
+  const { 
+    currentDayIndex, 
+    setCurrentDayIndex, 
+    isEditMode, 
+    setIsEditMode, 
+    localNotes, 
+    copiedDayNotes, 
+    setCopiedDayNotes,
+    showNotification // <-- Holen der Funktion aus dem Store
+  } = useAppStore();
 
   const changeDay = (direction: number) => {
     let newIndex = currentDayIndex;
@@ -16,11 +25,12 @@ export const Header = () => {
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
+    showNotification(isEditMode ? 'Ansichtsmodus aktiviert.' : 'Bearbeitungsmodus aktiviert.', 'info');
   };
 
   const copyDay = () => {
     if (localNotes.length === 0) {
-      alert('Keine Zettel zum Kopieren vorhanden.');
+      showNotification('Keine Zettel zum Kopieren vorhanden.', 'info');
       return;
     }
     
@@ -31,12 +41,12 @@ export const Header = () => {
     });
     
     setCopiedDayNotes(notesCopy as any);
-    alert(`Tag '${days[currentDayIndex]}' mit ${localNotes.length} Zetteln kopiert.`);
+    showNotification(`Tag '${days[currentDayIndex]}' mit ${localNotes.length} Zetteln kopiert.`, 'success');
   };
 
   const pasteDay = async () => {
     if (!copiedDayNotes || copiedDayNotes.length === 0) {
-      alert('Kein Tag kopiert!');
+      showNotification('Kein Tag zum Einfügen kopiert!', 'info');
       return;
     }
     
@@ -51,15 +61,15 @@ export const Header = () => {
     const { error } = await copyDayNotesToDB(notesToInsert as any);
     
     if (error) {
-      alert('Fehler beim Einfügen.');
+      showNotification('Fehler beim Einfügen des Tages.', 'error');
     } else {
-      alert('Tag erfolgreich eingefügt!');
+      showNotification('Tag erfolgreich eingefügt!', 'success');
     }
   };
 
   const arrangeNotes = async () => {
     if (localNotes.length === 0) {
-      alert('Keine Zettel zum Anordnen vorhanden.');
+      showNotification('Keine Zettel zum Anordnen vorhanden.', 'info');
       return;
     }
     
@@ -94,14 +104,14 @@ export const Header = () => {
     }
     
     await updateMultipleNotesInDB(updates as any);
-    alert('Pinnwand wurde aufgeräumt!');
+    showNotification('Pinnwand wurde aufgeräumt!', 'success');
   };
 
   const openAllNotes = async () => {
     const closedNotes = localNotes.filter(note => note.closedUntil !== null);
     
     if (closedNotes.length === 0) {
-      alert('Es sind keine Zettel geschlossen.');
+      showNotification('Es sind keine Zettel geschlossen.', 'info');
       return;
     }
     
@@ -113,7 +123,7 @@ export const Header = () => {
     const updates = closedNotes.map(note => ({ id: note.id, closedUntil: null }));
     
     await updateMultipleNotesInDB(updates as any);
-    alert('Alle Zettel wurden geöffnet!');
+    showNotification('Alle Zettel wurden geöffnet!', 'success');
   };
 
   const toggleFullscreen = () => {
@@ -126,8 +136,8 @@ export const Header = () => {
 
   return (
     <header style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      color: 'white',
+      background: 'var(--header-bg)',
+      color: 'var(--header-text, white)',
       boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
       position: 'relative',
       zIndex: 10,
@@ -137,27 +147,15 @@ export const Header = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '12px 24px',
+        height: '52px'
       }}>
-        {/* Left Section - Weather & Clock */}
+        {/* Left Section */}
         <div style={{ flex: 1, display: 'flex', gap: '12px', alignItems: 'center' }}>
           <WeatherWidget />
-          
-          <div style={{
-            background: 'rgba(255,255,255,0.15)',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            border: '1px solid rgba(255,255,255,0.2)',
-            fontFamily: "'Courier New', monospace",
-            fontWeight: 600,
-            color: 'white',
-          }}>
-            <i className="fas fa-clock" style={{ marginRight: '6px', color: 'white' }}></i>
-            <span id="header-clock">00:00:00</span>
-          </div>
+          <div id="header-clock" style={{ fontFamily: "'Courier New', monospace" }}>00:00:00</div>
         </div>
         
-        {/* Center Section - Day Navigation */}
+        {/* Center Section */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -165,161 +163,36 @@ export const Header = () => {
           background: 'rgba(255,255,255,0.2)',
           padding: '8px 20px',
           borderRadius: '16px',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255,255,255,0.3)',
         }}>
-          <button
-            onClick={() => changeDay(-1)}
-            style={{
-              padding: '6px 10px',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-            title="Vorheriger Tag"
-          >
-            <i className="fas fa-chevron-left" style={{ color: 'white', fontSize: '14px' }}></i>
+          <button onClick={() => changeDay(-1)} title="Vorheriger Tag">
+            <i className="fas fa-chevron-left"></i>
           </button>
-          
-          <div style={{
-            minWidth: '120px',
-            textAlign: 'center',
-            fontWeight: 600,
-            fontSize: '18px',
-            color: 'white',
-          }}>
+          <div style={{ minWidth: '120px', textAlign: 'center', fontWeight: 600, fontSize: '18px' }}>
             {days[currentDayIndex]}
           </div>
-          
-          <button
-            onClick={() => changeDay(1)}
-            style={{
-              padding: '6px 10px',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-            title="Nächster Tag"
-          >
-            <i className="fas fa-chevron-right" style={{ color: 'white', fontSize: '14px' }}></i>
+          <button onClick={() => changeDay(1)} title="Nächster Tag">
+            <i className="fas fa-chevron-right"></i>
           </button>
         </div>
         
-        {/* Right Section - Actions */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '8px',
-          alignItems: 'center',
-        }}>
-          <button
-            onClick={copyDay}
-            style={{
-              padding: '8px 12px',
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              cursor: 'pointer',
-            }}
-            title="Ganzen Tag kopieren"
-          >
-            <i className="fas fa-clone" style={{ color: 'white', fontSize: '14px' }}></i>
-          </button>
-
-          <button
-            onClick={pasteDay}
-            style={{
-              padding: '8px 12px',
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              cursor: 'pointer',
-            }}
-            title="Kopierten Tag einfügen"
-          >
-            <i className="fas fa-clipboard" style={{ color: 'white', fontSize: '14px' }}></i>
-          </button>
-
+        {/* Right Section */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '8px', alignItems: 'center' }}>
+          <button onClick={copyDay} title="Ganzen Tag kopieren"><i className="fas fa-clone"></i></button>
+          {copiedDayNotes && <button onClick={pasteDay} title="Kopierten Tag einfügen"><i className="fas fa-clipboard"></i></button>}
           {isEditMode && (
             <>
-              <button
-                onClick={openAllNotes}
-                style={{
-                  padding: '8px 12px',
-                  background: 'rgba(255,255,255,0.15)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                }}
-                title="Alle Zettel öffnen"
-              >
-                <i className="fas fa-lock-open" style={{ color: 'white', fontSize: '14px' }}></i>
-              </button>
-
-              <button
-                onClick={arrangeNotes}
-                style={{
-                  padding: '8px 12px',
-                  background: 'rgba(255,255,255,0.15)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                }}
-                title="Automatisch anordnen"
-              >
-                <i className="fas fa-magic" style={{ color: 'white', fontSize: '14px' }}></i>
-              </button>
+              <button onClick={openAllNotes} title="Alle Zettel öffnen"><i className="fas fa-lock-open"></i></button>
+              <button onClick={arrangeNotes} title="Automatisch anordnen"><i className="fas fa-magic"></i></button>
             </>
           )}
-
           <ThemeSelector />
-          
-          <button
-            onClick={toggleEditMode}
-            style={{
-              padding: '8px 12px',
-              background: isEditMode ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255,255,255,0.15)',
-              border: isEditMode ? '2px solid #22c55e' : '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              cursor: 'pointer',
-            }}
-            title={isEditMode ? 'Bearbeitungsmodus verlassen' : 'Bearbeitungsmodus aktivieren'}
-          >
-            <i className={`fas ${isEditMode ? 'fa-eye' : 'fa-pen'}`} style={{ color: 'white', fontSize: '14px' }}></i>
+          <button onClick={toggleEditMode} title={isEditMode ? 'Bearbeitungsmodus verlassen' : 'Bearbeitungsmodus aktivieren'}>
+            <i className={`fas ${isEditMode ? 'fa-eye' : 'fa-pen'}`}></i>
           </button>
-
-          <button
-            onClick={toggleFullscreen}
-            style={{
-              padding: '8px 12px',
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              cursor: 'pointer',
-            }}
-            title="Vollbild"
-          >
-            <i className="fas fa-expand" style={{ color: 'white', fontSize: '14px' }}></i>
-          </button>
+          <button onClick={toggleFullscreen} title="Vollbild"><i className="fas fa-expand"></i></button>
         </div>
       </div>
       
-      {/* Edit Mode Badge */}
       {isEditMode && (
         <div style={{
           position: 'absolute',
@@ -333,7 +206,6 @@ export const Header = () => {
           fontSize: '14px',
           fontWeight: 'bold',
           zIndex: 50,
-          whiteSpace: 'nowrap',
         }}>
           <i className="fas fa-edit" style={{ marginRight: '8px' }}></i>
           Bearbeitungsmodus
